@@ -32,7 +32,7 @@ pipeline {
         timestamps()
         timeout(time: 30, unit: 'MINUTES')
         disableConcurrentBuilds()
-        ansiColor('xterm')
+        // NOTE: ansiColor('xterm') removed - requires AnsiColor plugin to be installed
     }
 
     stages {
