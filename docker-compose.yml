@@ -45,8 +45,6 @@ services:
     environment:
       - MYSQL_ROOT_PASSWORD=${DB_PASSWORD:-root}
       - MYSQL_DATABASE=${DB_DATABASE:-sk_python_classes}
-      - MYSQL_USER=${DB_USERNAME:-app_user}
-      - MYSQL_PASSWORD=${DB_PASSWORD:-root}
     volumes:
       - db-data:/var/lib/mysql
     ports:
