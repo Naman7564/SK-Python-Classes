@@ -1,0 +1,16 @@
+# Minimal .htaccess for testing 403 errors
+# If the main .htaccess causes 403, rename this file to .htaccess to test
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # Send Requests To Front Controller...
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^ index.php [L]
+</IfModule>
+
+
+
+
+
