@@ -147,6 +147,8 @@ pipeline {
                             --label "org.opencontainers.image.title=${IMAGE_NAME}" \
                             --label "org.opencontainers.image.vendor=${DOCKER_HUB_USERNAME}" \
                             --label "jenkins.build.number=${BUILD_NUMBER}" \
+                            -t ${IMAGE_NAME}:${CURRENT_TAG} \
+                            -t ${IMAGE_NAME}:${LATEST_TAG} \
                             -t ${DOCKER_HUB_USERNAME}/${IMAGE_NAME}:${CURRENT_TAG} \
                             -t ${DOCKER_HUB_USERNAME}/${IMAGE_NAME}:${LATEST_TAG} \
                             .
