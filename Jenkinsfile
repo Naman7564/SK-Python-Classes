@@ -234,115 +234,7 @@ pipeline {
             }
         }
 
-        stage('🚀 Deploy Application') {
-            steps {
-                echo '═══════════════════════════════════════════════════════════════'
-                echo '                    DEPLOYMENT                                  '
-                echo '═══════════════════════════════════════════════════════════════'
-                script {
-                    try {
-                        echo "🛑 Stopping existing containers..."
-                        sh "docker compose down --remove-orphans 2>/dev/null || true"
-                        
-                        echo "🚀 Starting new containers..."
-                        sh """
-                            export IMAGE_TAG=${CURRENT_TAG}
-                            docker compose up -d --build --force-recreate
-                        """
-                        
-                        echo "⏳ Waiting for deployment to stabilize..."
-                        sleep 15
-                        
-                        // Verify deployment health
-                        sh """
-                            echo "🔍 Verifying deployment health..."
-                            for i in \$(seq 1 ${HEALTH_CHECK_RETRIES}); do
-                                if docker compose ps | grep -q "Up"; then
-                                    echo "✅ Deployment health check passed on attempt \$i"
-                                    exit 0
-                                fi
-                                echo "⏳ Attempt \$i: Containers not healthy, retrying..."
-                                sleep ${HEALTH_CHECK_INTERVAL}
-                            done
-                            echo "❌ Deployment health check failed!"
-                            exit 1
-                        """
-                        
-                        // Tag as stable after successful deployment
-                        sh """
-                            docker tag ${DOCKER_HUB_USERNAME}/${IMAGE_NAME}:${CURRENT_TAG} \
-                                       ${DOCKER_HUB_USERNAME}/${IMAGE_NAME}:${STABLE_TAG}
-                        """
-                        
-                        // Push stable tag
-                        docker_push("${IMAGE_NAME}", "${DOCKER_HUB_USERNAME}", "${STABLE_TAG}")
-                        
-                        echo "✅ Deployment completed successfully!"
-                        
-                    } catch (Exception deployError) {
-                        echo "❌ Deployment failed! Initiating rollback..."
-                        
-                        if (env.BACKUP_AVAILABLE == 'true') {
-                            // Rollback to previous stable version
-                            echo "🔄 Rolling back to previous stable version..."
-                            sh """
-                                docker compose down --remove-orphans 2>/dev/null || true
-                                
-                                # Pull previous stable image
-                                docker pull ${DOCKER_HUB_USERNAME}/${IMAGE_NAME}:${PREVIOUS_STABLE_TAG}
-                                
-                                # Tag it as latest for compose
-                                docker tag ${DOCKER_HUB_USERNAME}/${IMAGE_NAME}:${PREVIOUS_STABLE_TAG} \
-                                           ${DOCKER_HUB_USERNAME}/${IMAGE_NAME}:${LATEST_TAG}
-                                
-                                # Restart with previous version
-                                docker compose up -d
-                            """
-                            
-                            echo "🔄 Rollback completed! Running on previous stable version."
-                        } else {
-                            echo "⚠️ No backup available for rollback!"
-                        }
-                        
-                        error("Deployment failed, rollback initiated: ${deployError.message}")
-                    }
-                }
-            }
-        }
 
-        stage('📊 Post-Deployment Verification') {
-            steps {
-                echo '═══════════════════════════════════════════════════════════════'
-                echo '                    POST-DEPLOYMENT VERIFICATION                '
-                echo '═══════════════════════════════════════════════════════════════'
-                script {
-                    echo "🔍 Running post-deployment checks..."
-                    
-                    // Container status check
-                    sh """
-                        echo "📋 Container Status:"
-                        docker compose ps
-                        
-                        echo ""
-                        echo "📋 Container Logs (last 20 lines):"
-                        docker compose logs --tail=20
-                        
-                        echo ""
-                        echo "📋 Docker Images:"
-                        docker images | grep ${IMAGE_NAME} | head -10
-                    """
-                    
-                    // Final health verification
-                    sh """
-                        echo "🏥 Final Health Check..."
-                        sleep 5
-                        docker compose ps --filter "status=running" | grep -q "${IMAGE_NAME}" && \
-                            echo "✅ Application is running and healthy!" || \
-                            echo "⚠️ Application may have issues, please verify manually"
-                    """
-                }
-            }
-        }
 
         stage('🧹 Cleanup') {
             steps {
@@ -420,9 +312,6 @@ pipeline {
         always {
             echo "📋 Build Duration: ${currentBuild.durationString}"
             echo "📅 Build Time: ${BUILD_TIMESTAMP}"
-            
-            // Archive artifacts if needed
-            // archiveArtifacts artifacts: '**/logs/*.log', allowEmptyArchive: true
             
             // Clean workspace
             cleanWs(cleanWhenFailure: false)
