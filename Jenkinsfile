@@ -22,6 +22,7 @@ pipeline {
         HEALTH_CHECK_RETRIES = '10'
         HEALTH_CHECK_INTERVAL = '5'
         CONTAINER_NAME = 'sk-python-classes-app'
+        SERVER_IP = '140.245.6.79'
         
         // Rollback Configuration
         PREVIOUS_STABLE_TAG = 'previous-stable'
@@ -183,9 +184,9 @@ pipeline {
                         
                         // Health check
                         sh """
-                            echo "🔍 Running health check..."
+                            echo "🔍 Running health check on ${SERVER_IP}:8888..."
                             for i in \$(seq 1 ${HEALTH_CHECK_RETRIES}); do
-                                if curl -sf http://localhost:8888 > /dev/null 2>&1; then
+                                if curl -sf http://${SERVER_IP}:8888 > /dev/null 2>&1; then
                                     echo "✅ Health check passed on attempt \$i"
                                     exit 0
                                 fi
